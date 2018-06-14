@@ -63,10 +63,21 @@ export default class ViewPager extends Component {
     this.setPageWithoutAnimation = this.setPageWithoutAnimation.bind(this);
     this.setPage = this.setPage.bind(this);
     this.state = {
-      width: props.width ? props.width : 0,
-      height: props.height ? props.height : 0,
       page: props.initialPage
     };
+
+    this.width = props.width ? props.width : 0;
+    this.height = props.height ? props.height : 0;
+  }
+
+  componentWillReceiveProps(nextProps) {
+    if (
+      nextProps.height !== this.props.height ||
+      nextProps.width !== this.props.width
+    ) {
+      this.width = nextProps.width;
+      this.height = nextProps.height;
+    }
   }
 
   render() {
@@ -113,7 +124,7 @@ export default class ViewPager extends Component {
       showsHorizontalScrollIndicator: false,
       showsVerticalScrollIndicator: false,
       children: this._childrenWithOverridenStyle(),
-      contentOffset: { x: this.state.width * initialPage, y: 0 },
+      contentOffset: { x: this.width * initialPage, y: 0 },
       decelerationRate: 0.9,
       onScroll: needMonitorScroll ? this._onScrollOnIOS : null,
       scrollEventThrottle: needMonitorScroll
@@ -148,10 +159,10 @@ export default class ViewPager extends Component {
   _onScrollOnIOS(e) {
     let { x } = e.nativeEvent.contentOffset,
       offset,
-      position = Math.floor(x / this.state.width);
+      position = Math.floor(x / this.width);
     if (x === this._preScrollX) return;
     this._preScrollX = x;
-    offset = x / this.state.width - position;
+    offset = x / this.width - position;
 
     if (this.props.onPageScroll) this.props.onPageScroll({ offset, position });
 
@@ -165,15 +176,18 @@ export default class ViewPager extends Component {
 
   _onScrollViewLayout(event) {
     let { width, height } = event.nativeEvent.layout;
-    this.setState(
-      { width, height },
+
+    this.width = width;
+    this.height = height;
+
+    this.forceUpdate(
       () =>
         Platform.OS === "ios" && this.setPageWithoutAnimation(this.state.page)
     );
   }
 
   _childrenWithOverridenStyle() {
-    if (this.state.width === 0 || this.state.height === 0) return null;
+    if (this.width === 0 || this.height === 0) return null;
     return React.Children.map(this.props.children, child => {
       if (!child) return null;
       let newProps = {
@@ -181,8 +195,8 @@ export default class ViewPager extends Component {
         style: [
           child.props.style,
           {
-            width: this.state.width,
-            height: this.state.height,
+            width: this.width,
+            height: this.height,
             position: null
           }
         ],
@@ -213,7 +227,7 @@ export default class ViewPager extends Component {
     this.setState({ page: selectedPage });
     if (this.props.forceScrollView || Platform.OS === "ios")
       this.refs[SCROLLVIEW_REF].scrollTo({
-        x: this.state.width * selectedPage,
+        x: this.width * selectedPage,
         animated: false
       });
     else {
@@ -227,7 +241,7 @@ export default class ViewPager extends Component {
     this.setState({ page: selectedPage });
     if (this.props.forceScrollView || Platform.OS === "ios")
       this.refs[SCROLLVIEW_REF].scrollTo({
-        x: this.state.width * selectedPage
+        x: this.width * selectedPage
       });
     else {
       this.refs[VIEWPAGER_REF].setPage(selectedPage);
