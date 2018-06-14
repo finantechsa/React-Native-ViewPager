@@ -62,7 +62,11 @@ export default class ViewPager extends Component {
     this._setScrollState = this._setScrollState.bind(this);
     this.setPageWithoutAnimation = this.setPageWithoutAnimation.bind(this);
     this.setPage = this.setPage.bind(this);
-    this.state = { width: 0, height: 0, page: props.initialPage };
+    this.state = {
+      width: props.width ? props.width : 0,
+      height: props.height ? props.height : 0,
+      page: props.initialPage
+    };
   }
 
   render() {
@@ -102,7 +106,6 @@ export default class ViewPager extends Component {
     let props = {
       ...this.props,
       ref: SCROLLVIEW_REF,
-      onLayout: this._onScrollViewLayout,
       horizontal: true,
       pagingEnabled: this.props.horizontalScroll ? true : false,
       scrollEnabled: this.props.horizontalScroll ? true : false,
@@ -119,6 +122,11 @@ export default class ViewPager extends Component {
           : 1
         : 0
     };
+
+    if (!this.props.width || !this.props.height) {
+      props.onLayout = this._onScrollViewLayout;
+    }
+
     if (needMonitorTouch)
       props = Object.assign(props, this._panResponder.panHandlers);
     const scrollViewStyle = {
