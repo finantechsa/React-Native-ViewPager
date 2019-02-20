@@ -247,7 +247,7 @@ export default class ViewPager extends Component {
     this.width = width;
     this.height = height;
 
-    const forceUpdateCallback = null;
+    let forceUpdateCallback = null;
 
     if (this.props.setPageOnScrollViewLayoutChanges) {
       forceUpdateCallback = () =>
