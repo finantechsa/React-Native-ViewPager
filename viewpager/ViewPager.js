@@ -32,7 +32,9 @@ export default class ViewPager extends Component {
     onPageSelected: null,
     onPageScrollStateChanged: null,
     pageMargin: 0,
-    horizontalScroll: true
+    horizontalScroll: true,
+    setPageOnScrollViewLayoutChanges: true,
+    checkOnScrollStop: false
   };
 
   _scrollState = SCROLL_STATE.idle;
@@ -55,6 +57,9 @@ export default class ViewPager extends Component {
     this._onPageSelectedOnAndroid = this._onPageSelectedOnAndroid.bind(this);
     this._renderOnIOS = this._renderOnIOS.bind(this);
     this._onScrollOnIOS = this._onScrollOnIOS.bind(this);
+    this._onScrollBeginDrag = this._onScrollBeginDrag.bind(this);
+    this._onScrollEndDrag = this._onScrollEndDrag.bind(this);
+    this._onScrollStop = this._onScrollStop.bind(this);
     this._onScrollViewLayout = this._onScrollViewLayout.bind(this);
     this._childrenWithOverridenStyle = this._childrenWithOverridenStyle.bind(
       this
@@ -109,6 +114,24 @@ export default class ViewPager extends Component {
       Math.max(0, this.props.initialPage),
       childrenCount - 1
     );
+
+    const { checkOnScrollStop } = this.props;
+
+    const onScrollBeginDrag = checkOnScrollStop
+      ? this._onScrollBeginDrag
+      : null;
+    const onScrollEndDrag = checkOnScrollStop ? this._onScrollEndDrag : null;
+
+    let scrollEventThrottle = needMonitorScroll
+      ? this.props.onPageScroll
+        ? 8
+        : 1
+      : 0;
+
+    if (checkOnScrollStop) {
+      scrollEventThrottle = 16;
+    }
+
     let needMonitorScroll =
       !!this.props.onPageScroll ||
       !!this.props.onPageSelected ||
@@ -127,11 +150,9 @@ export default class ViewPager extends Component {
       contentOffset: { x: this.width * initialPage, y: 0 },
       decelerationRate: 0.9,
       onScroll: needMonitorScroll ? this._onScrollOnIOS : null,
-      scrollEventThrottle: needMonitorScroll
-        ? this.props.onPageScroll
-          ? 8
-          : 1
-        : 0
+      onScrollBeginDrag: onScrollBeginDrag,
+      onScrollEndDrag: onScrollEndDrag,
+      scrollEventThrottle: scrollEventThrottle
     };
 
     if (!this.props.width || !this.props.height) {
@@ -156,13 +177,59 @@ export default class ViewPager extends Component {
       );
   }
 
+  _onScrollBeginDrag() {
+    this.isUserDragging = true;
+  }
+
+  _onScrollEndDrag() {
+    this.isUserDragging = false;
+  }
+
+  _onScrollStop() {
+    if (this._preScrollX % this.width !== 0 && !this.isUserDragging) {
+      if (this.props.onPageScroll) {
+        const positionRaw = this._preScrollX / this.width;
+
+        const position = Math.round(positionRaw);
+
+        const xPosition = position * this.width;
+
+        this.refs[SCROLLVIEW_REF].scrollTo({
+          x: xPosition,
+          y: 0,
+          animated: true
+        });
+
+        if (this.props.onPageScroll) {
+          this.props.onPageScroll({ offset: 0, position });
+        }
+      }
+    }
+  }
+
   _onScrollOnIOS(e) {
     let { x } = e.nativeEvent.contentOffset,
       offset,
       position = Math.floor(x / this.width);
-    if (x === this._preScrollX) return;
+
+    if (x === this._preScrollX) {
+      return;
+    }
+
+    x = Math.min(x, this.width);
+
     this._preScrollX = x;
     offset = x / this.width - position;
+
+    if (this.props.checkOnScrollStop) {
+      if (this.onScrollTimeout) {
+        clearTimeout(this.onScrollTimeout);
+      }
+
+      this.onScrollTimeout = setTimeout(() => {
+        this._onScrollStop();
+      }, 160);
+    }
 
     if (this.props.onPageScroll) this.props.onPageScroll({ offset, position });
 
@@ -180,10 +247,14 @@ export default class ViewPager extends Component {
     this.width = width;
     this.height = height;
 
-    this.forceUpdate(
-      () =>
-        Platform.OS === "ios" && this.setPageWithoutAnimation(this.state.page)
-    );
+    const forceUpdateCallback = null;
+
+    if (this.props.setPageOnScrollViewLayoutChanges) {
+      forceUpdateCallback = () =>
+        Platform.OS === "ios" && this.setPageWithoutAnimation(this.state.page);
+    }
+
+    this.forceUpdate(forceUpdateCallback);
   }
 
   _childrenWithOverridenStyle() {
