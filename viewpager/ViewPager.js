@@ -61,9 +61,6 @@ export default class ViewPager extends Component {
     this._onScrollEndDrag = this._onScrollEndDrag.bind(this);
     this._onScrollStop = this._onScrollStop.bind(this);
     this._onScrollViewLayout = this._onScrollViewLayout.bind(this);
-    this._onMoveShouldSetPanResponder = this._onMoveShouldSetPanResponder.bind(
-      this
-    );
     this._childrenWithOverridenStyle = this._childrenWithOverridenStyle.bind(
       this
     );
@@ -103,14 +100,14 @@ export default class ViewPager extends Component {
     );
   }
 
-  _onMoveShouldSetPanResponder(event, gestureState) {
+  _onMoveShouldSetPanResponder = (event, gestureState) => {
     if (this.props.horizontalScroll) {
       const dxAbs = Math.abs(gestureState.dx);
       return dxAbs > 10;
     }
 
     return true;
-  }
+  };
 
   _onPageScrollOnAndroid(e) {
     if (this.props.onPageScroll) this.props.onPageScroll(e.nativeEvent);
