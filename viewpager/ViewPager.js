@@ -131,6 +131,11 @@ export default class ViewPager extends Component {
       : null;
     const onScrollEndDrag = checkOnScrollStop ? this._onScrollEndDrag : null;
 
+    let needMonitorScroll =
+      !!this.props.onPageScroll ||
+      !!this.props.onPageSelected ||
+      !!this.props.onPageScrollStateChanged;
+
     let scrollEventThrottle = needMonitorScroll
       ? this.props.onPageScroll
         ? 8
@@ -141,10 +146,6 @@ export default class ViewPager extends Component {
       scrollEventThrottle = 16;
     }
 
-    let needMonitorScroll =
-      !!this.props.onPageScroll ||
-      !!this.props.onPageSelected ||
-      !!this.props.onPageScrollStateChanged;
     let needMonitorTouch = !!this.props.onPageScrollStateChanged;
     let props = {
       ...this.props,
