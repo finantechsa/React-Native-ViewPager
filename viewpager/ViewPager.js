@@ -9,9 +9,11 @@ import {
   Platform,
   ScrollView,
   StyleSheet,
-  View,
-  ViewPagerAndroid
+  View  
 } from "react-native";
+
+import { ViewPager as ViewPagerAndroid } from '@react-native-community/viewpager';
+
 import React, { Component } from "react";
 
 const SCROLLVIEW_REF = "scrollView";
@@ -23,8 +25,7 @@ const SCROLL_STATE = {
   dragging: "dragging"
 };
 export default class ViewPager extends Component {
-  static propTypes = { ...ViewPagerAndroid.propTypes };
-
+  
   static defaultProps = {
     initialPage: 0,
     keyboardDismissMode: "on-drag",
